@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 import subprocess as sp
 
@@ -14,7 +15,7 @@ try:
 except ImportError:
     DOTENV = None
 
-FFMPEG_BINARY = os.getenv("FFMPEG_BINARY", "ffmpeg-imageio")
+FFMPEG_BINARY = 'ffmpeg' if shutil.which('ffmpeg') is not None else os.getenv("FFMPEG_BINARY", "ffmpeg-imageio")
 IMAGEMAGICK_BINARY = os.getenv("IMAGEMAGICK_BINARY", "auto-detect")
 
 
