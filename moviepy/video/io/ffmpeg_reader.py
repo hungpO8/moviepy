@@ -18,6 +18,8 @@ from moviepy.tools import cvsecs
 
 logging.captureWarnings(True)
 
+GPU_available = bool(os.popen('nvidia-smi').readlines())
+
 
 class FFMPEG_VideoReader:
     def __init__(
@@ -89,26 +91,46 @@ class FFMPEG_VideoReader:
             ]
         else:
             i_arg = ["-i", self.filename]
-
-        cmd = (
-            [FFMPEG_BINARY]
-            + i_arg
-            + [
-                "-loglevel",
-                "error",
-                "-f",
-                "image2pipe",
-                "-vf",
-                "scale=%d:%d" % tuple(self.size),
-                "-sws_flags",
-                self.resize_algo,
-                "-pix_fmt",
-                self.pix_fmt,
-                "-vcodec",
-                "rawvideo",
-                "-",
-            ]
-        )
+        if GPU_available:
+            cmd = (
+                    [FFMPEG_BINARY,
+                     "-c:v",
+                     "h264_cuvid",
+                     "-resize",
+                     "%dx%d" % tuple(self.size)]
+                    + i_arg
+                    + [
+                        "-loglevel",
+                        "error",
+                        "-f",
+                        "image2pipe",
+                        "-pix_fmt",
+                        self.pix_fmt,
+                        "-vcodec",
+                        "rawvideo",
+                        "-",
+                    ]
+            )
+        else:
+            cmd = (
+                [FFMPEG_BINARY]
+                + i_arg
+                + [
+                    "-loglevel",
+                    "error",
+                    "-f",
+                    "image2pipe",
+                    "-vf",
+                    "scale=%d:%d" % tuple(self.size),
+                    "-sws_flags",
+                    self.resize_algo,
+                    "-pix_fmt",
+                    self.pix_fmt,
+                    "-vcodec",
+                    "rawvideo",
+                    "-",
+                ]
+            )
         popen_params = {
             "bufsize": self.bufsize,
             "stdout": sp.PIPE,
