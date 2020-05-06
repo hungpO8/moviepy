@@ -33,6 +33,7 @@ class FFMPEG_VideoReader:
         resize_algo="bicubic",
         fps_source="tbr",
     ):
+        self.use_GPU = GPU_available
 
         self.filename = filename
         self.proc = None
@@ -72,7 +73,15 @@ class FFMPEG_VideoReader:
         self.initialize()
 
         self.pos = 1
-        self.lastread = self.read_frame()
+        try:
+            self.lastread = self.read_frame()
+        except IOError as e:
+            if self.use_GPU:
+                self.use_GPU = False
+                self.initialize()
+                self.lastread = self.read_frame()
+            else:
+                raise IOError(e)
 
     def initialize(self, starttime=0):
         """Opens the file, creates the pipe. """
@@ -91,7 +100,7 @@ class FFMPEG_VideoReader:
             ]
         else:
             i_arg = ["-i", self.filename]
-        if GPU_available:
+        if self.use_GPU:
             cmd = (
                     [FFMPEG_BINARY,
                      "-c:v",
